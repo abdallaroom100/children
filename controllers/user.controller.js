@@ -69,10 +69,7 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ error: "plase fill all required fields" });
     }
     
-    if(password.length < 6){
-        return res.status(400).json({ error: "password must be atleast 6 chars" });
-    }
-
+ 
     const user = await User.findOne({ email });
     if (!user) {
         return res.status(401).json({ error: "email not found" });
