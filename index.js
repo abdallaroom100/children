@@ -22,7 +22,7 @@ app.use(cookieParser())
 
 // app.use("/compound", compoundRouter);
 // app.use("/apartment", apartmentRouter);
-app.use("/api/v1/user", userRouter);
+app.use("/user", userRouter);
 app.use("/", homeRouter);
 // Routes
 connectDb()
