@@ -7,6 +7,8 @@ import apartmentRouter from "./routers/apartment.router.js"
 import userRouter from "./routers/user.router.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import dotenv from "dotenv"
+dotenv.config()
 // Middlewares
 const app = express();
 app.use(express.json());
