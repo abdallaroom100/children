@@ -4,6 +4,7 @@ import generateToken from "../utils/generateToken.js";
 import bcrypt from "bcryptjs"; 
  import validator from "validator"
 import { getSubscriptionPrice } from "../utils/getSubscriptoinPrice.js";
+import Complaint from "../models/Complaints.schema.js";
 
 
  export const getAllUsers = async (req,res)=>{
@@ -271,3 +272,44 @@ export const logOut = async (req, res) => {
       console.log(error.message);
     }
   };
+
+
+
+
+  export const  getAdminPageDetails  = async (req,res)=>{
+    try {
+      
+      const totalCompalints = await Complaint.find({}).countDocuments()
+      const last3Complaints = await Complaint.find({}).sort({createdAt:-1}).limit(3)
+      const last8Students = await User.find({ rule: "student" })
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .select("name email subscription");
+
+    // 2. عدد الطلاب اللي مش Admin
+    const studentCount = await User.countDocuments({ rule: "student" });
+
+    // 3. إجمالي الربح من الاشتراكات
+    const totalRevenue = await User.aggregate([
+      {
+        $match: { "subscription.price": { $gt: 0 } }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$subscription.price" }
+        }
+      }
+    ]);
+
+    return {
+      totalRevenue: totalRevenue[0]?.total || 0,
+      studentCount,
+      last8Students,
+      last3Complaints,
+      totalCompalints,
+    };
+    } catch (error) {
+      console.log(error)
+    }
+  }
