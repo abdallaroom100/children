@@ -3,6 +3,7 @@ import User from "../models/User.schema.js";
 import generateToken from "../utils/generateToken.js";
 import bcrypt from "bcryptjs"; 
  import validator from "validator"
+import { getSubscriptionPrice } from "../utils/getSubscriptoinPrice.js";
 
 
  export const getAllUsers = async (req,res)=>{
@@ -156,3 +157,117 @@ export const logOut = async (req, res) => {
     }
   };
 
+
+
+  
+  export const subscribe = async (req,res)=>{
+    try {
+      const {id} = req.params
+      if(!mongoose.Types.ObjectId.isValid(id)){
+        return res.status(401).json({message:"invalid id"})
+      }
+
+      const {name, type,numbers} = req.body
+      if(!name || !type || !numbers){
+        return res.status(400).json({message:"please fill all required fields"})
+      }
+
+      const user = await User.findById(id)
+      if(!user){
+        return res.status(401).json({message:"user  not found"})
+      }
+
+
+       if(user.subscription.type !== "not_subscribed"){
+      return res.status(400).json({message:"you have already subscribed"})
+       }
+
+
+        if(name.length < 3){
+          return res.status(401).json({message:"name must be atleast 3 chars"})
+        }else {
+          user.subscription.name = name
+        }
+
+
+
+      if(numbers != 16 ){
+      return res.status(400).json({message:"card numbers must be 16 "})
+      }
+
+      if(type == "advanced" || type == "professional"|| type ==  "beginner"  ){
+        user.subscription.type = type
+        user.subscription.price = getSubscriptionPrice(type)
+      }
+      else {
+        return res.status(401).json({message:"invalid subscription type"})
+      }
+      await user.save()
+      res.status(200).json(user)
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+  export const createAdmin =  async () =>{
+     
+    const { name, password,email } = req.body;
+    try {
+      if (!name || !password) { 
+        return res.status(400).json({ error: "plase fill all fields" });
+      }
+      if(name.length < 3){
+          return res.status(400).json({ error: "username must be atleast 3 chars" });
+      }
+      if(!validator.isEmail(email)
+      ){
+          return res.status(400).json({ error: "invalid email" });
+      }
+      if(password.length < 6){
+          return res.status(400).json({ error: "password must be atleast 6 chars" });
+      }
+       const user = await User.findOne({email})
+     
+       if(user) return res.status(400).json({error:"this email is already exist"})
+      const hash = bcrypt.hashSync(password, 10);
+      const newUser = await User.create({
+        name,
+        email,
+        password: hash,
+        rule:"admin"
+      });
+      generateToken(newUser._id, res,req);
+      res.status(200).json({...newUser._doc,token:req.token});
+    } catch (error) {
+      console.log(`error in signup user function`);
+      console.log(error.message);
+    }
+  }
+
+  export const loginAdmin = async (req, res) => {
+
+    const { email, password } = req.body;
+    try {
+      if (!email || !password) {
+        return res.status(400).json({ error: "plase fill all required fields" });
+      }
+      
+   
+      const user = await User.findOne({ email,rule:"admin" });
+      if (!user) {
+          return res.status(401).json({ error: "email not found" });
+      }
+      const Vpassword = bcrypt.compareSync(password, user.password);
+      if (!Vpassword){
+          return res.status(401).json({ error: "password is incorrect" });
+      }
+      generateToken(user._id, res,req);
+      console.log(req.token)
+      res.status(200).json({...user._doc,token:req.token});
+    } catch (error) {
+      console.log(`error in login user function`);
+      console.log(error.message);
+    }
+  };
