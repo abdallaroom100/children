@@ -192,7 +192,7 @@ export const logOut = async (req, res) => {
 
 
 
-      if(numbers != 16 ){
+      if(numbers.length !== 16 ){
       return res.status(400).json({message:"card numbers must be 16 "})
       }
 
@@ -212,8 +212,8 @@ export const logOut = async (req, res) => {
   }
 
 
-  export const createAdmin =  async () =>{
-     
+  export const createAdmin =  async (req,res) =>{
+     console.log(req.body)
     const { name, password,email } = req.body;
     try {
       if (!name || !password) { 
@@ -280,7 +280,7 @@ export const logOut = async (req, res) => {
     try {
       
       const totalCompalints = await Complaint.find({}).countDocuments()
-      const last3Complaints = await Complaint.find({}).sort({createdAt:-1}).limit(3)
+      const last3Complaints = await Complaint.find({}).sort({createdAt:-1}).limit(3).populate("user","name")
       const last8Students = await User.find({ rule: "student" })
       .sort({ createdAt: -1 })
       .limit(8)
@@ -301,14 +301,15 @@ export const logOut = async (req, res) => {
         }
       }
     ]);
-
-    return {
+ 
+     return res.status(200).json({
       totalRevenue: totalRevenue[0]?.total || 0,
       studentCount,
       last8Students,
       last3Complaints,
       totalCompalints,
-    };
+     })
+   
     } catch (error) {
       console.log(error)
     }

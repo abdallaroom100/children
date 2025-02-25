@@ -8,6 +8,7 @@ import userRouter from "./routers/user.router.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
+import complaintsRouter from "./routers/complaint.router.js"
 dotenv.config()
 // Middlewares
 const app = express();
@@ -24,6 +25,7 @@ app.use(cookieParser())
 // app.use("/apartment", apartmentRouter);
 app.use("/user", userRouter);
 app.use("/", homeRouter);
+app.use("/complaint",complaintsRouter)
 // Routes
 connectDb()
 // connection

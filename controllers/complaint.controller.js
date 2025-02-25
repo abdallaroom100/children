@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
-import { User } from "../models"
-import Complaint from "../models/Complaints.schema"
+import User  from "../models/User.schema.js"
+import Complaint from "../models/Complaints.schema.js"
 
 
 
