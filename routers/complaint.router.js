@@ -6,7 +6,11 @@ const router = express.Router()
 
 
 router.get("/",getAllComplaints)
-router.post("/:userId",protectRoute,createComplaint)
+router.post("/:userId",createComplaint)
 
 
 export default router 
+
+/**
+ * 
+ */
