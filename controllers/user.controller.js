@@ -354,7 +354,7 @@ export const forgetPassword = async (req, res) => {
     await user.save();
     sendForgetPassowrdMessage(
       user.email,
-      `http://localhost:${port}/pages/updatePassword.html?token=${token}?email=${user.email}`
+      `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
     );
 
     return res
