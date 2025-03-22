@@ -4,14 +4,12 @@ import nodemailer from "nodemailer"
 
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // true for port 465, false for other ports
+    port: 587,
+    secure: false, // true for port 465, false for other ports
     auth: {
       user: "abdallaroom7@gmail.com",
       pass: "zbvh tszg pgxc pwym",
     },
-    disableFileAccess: true,  // يمنع الكاش من الملفات
-    disableUrlAccess: true,
   });
 
 
@@ -28,10 +26,9 @@ export const sendForgetPassowrdMessage = async (email,message) =>{
              please use this link to update your account password , notice that the link will get expired after 15 minutes <br/>
              link:<a href="${message}">${message}</a>
             </b>`, // html body
-            disableFileAccess: true,  // يمنع الكاش من الملفات
-            disableUrlAccess: true,
+
           });
-          transporter.close();
+       
         
          
 
