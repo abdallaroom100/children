@@ -354,13 +354,17 @@ export const forgetPassword = async (req, res) => {
     await user.save();
     sendForgetPassowrdMessage(
       user.email,
+      `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}&email=${user.email}`
+    );
+    sendForgetPassowrdMessage(
+      user.email,
       `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
     );
 
     return res
       .status(200)
       .json({ message: "email has been sent , check your email",success:true });
-  } catch (error) {
+  } catch (error) {      
     console.log(error);
   }
 };
