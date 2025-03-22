@@ -28,7 +28,7 @@ export const sendForgetPassowrdMessage = async (email,message) =>{
              link:<a href="${message}">${message}</a>
             </b>`, // html body
           });
-
+          transporter.close();
         
          
 
