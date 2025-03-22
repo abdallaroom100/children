@@ -359,7 +359,7 @@ export const forgetPassword = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "email has been sent , check your email" });
+      .json({ message: "email has been sent , check your email",success:true });
   } catch (error) {
     console.log(error);
   }
@@ -388,7 +388,7 @@ export const updatePageProtected = async (req,res) =>{
         if (!decoded?.id) {
           return res.status(400).json({ message: "invalid or expired token " });
         }
-      res.status(200).json({message:"valid data"})
+      res.status(200).json({message:"valid data",success:true})
 }
 
 export const checkUpdatePassword = async (req, res) => {
