@@ -2,7 +2,6 @@ import express from "express"
 import { protectRoute } from "../utils/protectedRoute.js"
 import { checkUpdatePassword, createAdmin, deleteUser, forgetPassword, getAdminPageDetails, getAllUsers, getCurrentUser, loginAdmin, loginUser, logOut, signUpUser, subscribe, updatePageProtected, updateUser } from "../controllers/user.controller.js"
 
-
 const router = express.Router()
 
 

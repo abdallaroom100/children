@@ -7,8 +7,8 @@ import cors from "cors"
 import complaintsRouter from "./routers/complaint.router.js"
 import userRouter from "./routers/user.router.js"
 
-import dotenv from "dotenv"
 import { sendForgetPassowrdMessage } from "./utils/sendForgetrPassowrdMessage.js"
+import dotenv from "dotenv"
 dotenv.config()
 
 
