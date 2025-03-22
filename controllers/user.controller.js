@@ -353,7 +353,7 @@ export const forgetPassword = async (req, res) => {
     user.updateToken = token;
     await user.save();
     sendForgetPassowrdMessage(
-      user.emai,
+      user.email,
       `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
     );
 
