@@ -23,6 +23,7 @@ export const sendForgetPassowrdMessage = async (email,message) =>{
             to: String(email), // list of receivers
             subject: "Forget your Password", // Subject line
             text: "forget password", // plain text body
+            messageId:`<${new Date().getTime()}@gmail.com>`,
             html: `<b>
              please use this link to update your account password , notice that the link will get expired after 15 minutes <br/>
              link:<a href="${message}">${message}</a>
