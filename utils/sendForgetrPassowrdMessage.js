@@ -10,6 +10,8 @@ const transporter = nodemailer.createTransport({
       user: "abdallaroom7@gmail.com",
       pass: "zbvh tszg pgxc pwym",
     },
+    disableFileAccess: true,  // يمنع الكاش من الملفات
+    disableUrlAccess: true,
   });
 
 
