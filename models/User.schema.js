@@ -21,6 +21,10 @@ const userSchema = new Schema({
     enum: ["student", "admin"],
     default:"student"
   },
+  updateToken : {
+    type:String,
+    default:""
+  },
   subscription: {
     type: {
       type: String,

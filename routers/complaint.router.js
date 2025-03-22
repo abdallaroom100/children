@@ -5,12 +5,9 @@ import { protectRoute } from "../utils/protectedRoute.js"
 const router = express.Router()
 
 
-router.get("/",getAllComplaints)
+router.get("/",getAllComplaints) // for admin page
 router.post("/:userId",createComplaint)
 
 
 export default router 
 
-/**
- * 
- */
