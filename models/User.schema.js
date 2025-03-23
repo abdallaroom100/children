@@ -16,6 +16,14 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
+  currentGameLevel:{
+  type:Number,
+  default:0
+  },
+  lessons:{
+    type:[String],
+    default:[]
+  },
   rule: {
     type: String,
     enum: ["student", "admin"],

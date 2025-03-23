@@ -1,6 +1,6 @@
 import express from "express"
 import { protectRoute } from "../utils/protectedRoute.js"
-import { checkUpdatePassword, createAdmin, deleteUser, forgetPassword, getAdminPageDetails, getAllUsers, getCurrentUser, loginAdmin, loginUser, logOut, signUpUser, subscribe, updatePageProtected, updateUser } from "../controllers/user.controller.js"
+import { checkUpdatePassword, createAdmin, deleteUser, forgetPassword, getAdminPageDetails, getAllUsers, loginAdmin, loginUser, logOut, setCurrentGameLevel, setCurrentUserLessonsWatched, signUpUser, subscribe, updatePageProtected, updateUser } from "../controllers/user.controller.js"
 
 const router = express.Router()
 
@@ -12,7 +12,15 @@ router.post("/loginAdmin",loginAdmin)
 router.post("/subscribe/:id",protectRoute,subscribe)
 router.get("/",protectRoute,getAllUsers)
 router.post("/forgetPassword",forgetPassword)
-router.post('/updatePassword',checkUpdatePassword)
+router.post('/',checkUpdatePassword)
+
+
+
+
+router.post("/level",setCurrentGameLevel)
+router.post('/lesson',setCurrentUserLessonsWatched)
+
+ 
 router.post('/updateprotect',updatePageProtected)
 router.patch("/update/:userId",protectRoute,updateUser)
 router.get("/adminPageDetial",protectRoute,getAdminPageDetails) // for admin page

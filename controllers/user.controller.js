@@ -8,6 +8,10 @@ import Complaint from "../models/Complaints.schema.js";
 import jwt from "jsonwebtoken";
 import { sendForgetPassowrdMessage } from "../utils/sendForgetrPassowrdMessage.js";
 
+
+
+
+
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -334,11 +338,9 @@ export const forgetPassword = async (req, res) => {
       return res.status(400).json({ message: "email is required" });
     }
     if (!port) {
-      return res
-        .status(400)
-        .json({
-          message: "missing port!, please open the project with live server",
-        });
+      return res.status(400).json({
+        message: "missing port!, please open the project with live server",
+      });
     }
 
     const user = await User.findOne({ email });
@@ -357,45 +359,39 @@ export const forgetPassword = async (req, res) => {
       `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
     );
 
-
-
-    return res
-      .status(200)
-      .json({ message: "email has been sent , check your email",success:true });
-  } catch (error) {      
+    return res.status(200).json({
+      message: "email has been sent , check your email",
+      success: true,
+    });
+  } catch (error) {
     console.log(error);
   }
 };
 
+export const updatePageProtected = async (req, res) => {
+  const { token, email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(400).json({ message: "email not found" });
+  }
 
+  if (!token) {
+    return res.status(400).json({ message: "missing token!" });
+  }
+  if (user.updateToken != token) {
+    return res.status(400).json({ message: "invalid or expired token" });
+  }
 
-
-export const updatePageProtected = async (req,res) =>{
-    
-
-      const { token, email } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) {
-          return res.status(400).json({ message: "email not found" });
-        }
-    
-        if (!token) {
-          return res.status(400).json({ message: "missing token!" });
-        }
-        if (user.updateToken != token) {
-          return res.status(400).json({ message: "invalid or expired token" });
-        }
-    
-        const decoded = jwt.verify(token, "SECRET");
-        if (!decoded?.id) {
-          return res.status(400).json({ message: "invalid or expired token " });
-        }
-      res.status(200).json({message:"valid data",success:true})
-}
+  const decoded = jwt.verify(token, "SECRET");
+  if (!decoded?.id) {
+    return res.status(400).json({ message: "invalid or expired token " });
+  }
+  res.status(200).json({ message: "valid data", success: true });
+};
 
 export const checkUpdatePassword = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const { token, email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
@@ -424,8 +420,69 @@ export const checkUpdatePassword = async (req, res) => {
     user.password = hash;
     user.updateToken = "";
     await user.save();
-    res.status(200).json({ message: "password is updated successfully" });
+    res
+      .status(200)
+      .json({ message: "password is updated successfully", success: true });
   } catch (error) {
-    console.log(error)
+    console.log(error);
+  }
+};
+
+export const setCurrentGameLevel = async (req, res) => {
+  const { currentlevel } = req.body;
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(401).json({ message: "user not found" });
+    }
+
+    if (currentlevel > 4) {
+      return res.status(400).json({ message: "the max game level is 4" });
+    } else if (currentlevel < user.currentGameLevel) {
+      return res
+        .status(400)
+        .json({
+          message: "the current game level is higher than given level ",
+        });
+    }
+
+    user.currentGameLevel = currentlevel;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: `current user have reached level ${currentlevel}` });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const setCurrentUserLessonsWatched = async (req, res) => {
+  const { userId } = req.params;
+  const { lesson } = req.body;
+  try {
+    const user = await User.findById(userId);
+
+    if (!lesson) {
+      return res.status(400).json({ message: "lesson cannot be empty" });
+    }
+    if (!user) {
+      return res.status(401).json({ message: "user not found" });
+    }
+
+    if (user.lessons.includes(lesson)) {
+      return res.status(400).json({ message: "this lesson is already added" });
+    }
+
+    user.lessons.push(lesson);
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "the lesson added successfully", success: true });
+  } catch (error) {
+    console.log(error);
   }
 };
