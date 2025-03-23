@@ -14,7 +14,7 @@ router.get("/",protectRoute,getAllUsers)
 router.post("/forgetPassword",forgetPassword)
 router.post('/updatePassword',checkUpdatePassword)
 
-router.get("/:userId",findUser)
+router.get("/find/:userId",findUser)
 
 
 router.post("/level/:userId",setCurrentGameLevel)
