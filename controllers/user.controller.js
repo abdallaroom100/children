@@ -326,10 +326,64 @@ export const getAdminPageDetails = async (req, res) => {
   }
 };
 
+// export const forgetPassword = async (req, res) => {
+//   try {
+//     const { email, port } = req.body;
+
+//     if (!email) {
+//       return res.status(400).json({ message: "email is required" });
+//     }
+//     if (!port) {
+//       return res.status(400).json({
+//         message: "missing port!, please open the project with live server",
+//       });
+//     }
+
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(201).json({ message: "email not found" });
+//     }
+    
+//      let token 
+//     if (user.updateToken) {
+//       const decoded = jwt.verify(user.updateToken, "SECRET");
+//       if (!decoded?.id) {
+//        token = user.updateToken
+//       }else{
+//         token = jwt.sign({ id: user._id }, "SECRET", {
+//           expiresIn: 1000 * 60 * 15,
+//         });
+//       }
+//     }else {
+//         token = jwt.sign({ id: user._id }, "SECRET", {
+//       expiresIn: 1000 * 60 * 15,
+//     });
+//     }
+//     console.log(token)
+
+//     user.updateToken = token;
+//     await user.save();
+//     sendForgetPassowrdMessage(
+//       user.email,
+//       `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
+//     );
+
+//     return res.status(200).json({
+//       message: "email has been sent , check your email",
+//       success: true,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+
+
 export const forgetPassword = async (req, res) => {
   try {
     const { email, port } = req.body;
 
+    // التحقق من وجود البريد الإلكتروني والـ port
     if (!email) {
       return res.status(400).json({ message: "email is required" });
     }
@@ -339,41 +393,78 @@ export const forgetPassword = async (req, res) => {
       });
     }
 
+    // البحث عن المستخدم
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(201).json({ message: "email not found" });
     }
-    
-     let token 
+
+    let token;
+
+    // التحقق من وجود updateToken
     if (user.updateToken) {
-      const decoded = jwt.verify(user.updateToken, "SECRET");
-      if (!decoded?.id) {
-       token = user.updateToken
-      }else{
+      try {
+        // محاولة فك التوكن للتحقق من صلاحيته
+        const decoded = jwt.verify(user.updateToken, "SECRET");
+
+        // إذا كان التوكن صالحًا (لم تنتهِ صلاحيته) ويحتوي على id
+        if (decoded?.id) {
+          token = user.updateToken; // استخدام نفس التوكن
+        } else {
+          // إذا كان هناك مشكلة في التوكن (مثل عدم وجود id)
+          token = jwt.sign({ id: user._id }, "SECRET", {
+            expiresIn: 1000 * 60 * 15, // 15 دقيقة
+          });
+        }
+      } catch (error) {
+        // إذا انتهت صلاحية التوكن أو كان هناك خطأ في فك التوكن
+        if (error.name === "TokenExpiredError") {
+          console.log("Token has expired, generating a new one.");
+        } else {
+          console.log("Error verifying token:", error.message);
+        }
+        // إنشاء توكن جديد
         token = jwt.sign({ id: user._id }, "SECRET", {
-          expiresIn: 1000 * 60 * 15,
+          expiresIn: 1000 * 60 * 15, // 15 دقيقة
         });
       }
-    }else {
-        token = jwt.sign({ id: user._id }, "SECRET", {
-      expiresIn: 1000 * 60 * 15,
-    });
+    } else {
+      // إذا لم يكن هناك توكن موجود، إنشاء توكن جديد
+      token = jwt.sign({ id: user._id }, "SECRET", {
+        expiresIn: 1000 * 60 * 15, // 15 دقيقة
+      });
     }
-   
 
+    console.log("Generated/Used Token:", token);
+
+    // تحديث التوكن في قاعدة البيانات
     user.updateToken = token;
     await user.save();
-    sendForgetPassowrdMessage(
+
+    // إرسال البريد الإلكتروني مع رابط التوكن
+    const result = await sendForgetPassowrdMessage(
       user.email,
       `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
     );
 
+    // التحقق من نجاح إرسال البريد
+    if (!result.success) {
+      return res.status(500).json({
+        message: "Failed to send email, please try again later",
+        success: false,
+      });
+    }
+
     return res.status(200).json({
-      message: "email has been sent , check your email",
+      message: "Email has been sent, check your email",
       success: true,
     });
   } catch (error) {
-    console.log(error);
+    console.error("Error in forgetPassword:", error);
+    return res.status(500).json({
+      message: "An error occurred, please try again later",
+      success: false,
+    });
   }
 };
 
