@@ -68,7 +68,7 @@ transporter.verify((error, success) => {
 });
 
 // دالة لإرسال رسالة نسيان كلمة المرور
-export const sendForgetPasswordMessage = async (email, message) => {
+export const sendForgetPassowrdMessage = async (email, message) => {
   const mailOptions = {
     from: '"Al Madrasa" <abdallaroom25@gmail.com>', // تأكد أن هذا البريد مُصرّح به في Brevo
     to: email,
