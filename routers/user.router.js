@@ -12,7 +12,7 @@ router.post("/loginAdmin",loginAdmin)
 router.post("/subscribe/:id",protectRoute,subscribe)
 router.get("/",protectRoute,getAllUsers)
 router.post("/forgetPassword",forgetPassword)
-router.post('/',checkUpdatePassword)
+router.post('/updatePassword',checkUpdatePassword)
 
 
 
