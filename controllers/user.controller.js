@@ -438,8 +438,8 @@ export const setCurrentGameLevel = async (req, res) => {
       return res.status(401).json({ message: "user not found" });
     }
 
-    if (currentlevel > 4) {
-      return res.status(400).json({ message: "the max game level is 4" });
+    if (currentlevel > 5) {
+      return res.status(400).json({ message: "the max game level is 5" });
     } else if (currentlevel < user.currentGameLevel) {
       return res
         .status(400)
