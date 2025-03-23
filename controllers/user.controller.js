@@ -17,6 +17,21 @@ export const getAllUsers = async (req, res) => {
     console.log(error.message);
   }
 };
+
+ export const findUser = async  ( req,res)=>{
+    const {userId} = req.params
+  try {
+     const user = await User.findById(userId)
+     if(!user) {
+      return res.status(200).json({message:"user not found"})
+     }
+
+     res.status(201).json(user)
+     
+  } catch (error) {
+    console.log(error)
+  }
+ }
 export const getCurrentUser = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req?.userId)) {

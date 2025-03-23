@@ -1,6 +1,6 @@
 import express from "express"
 import { protectRoute } from "../utils/protectedRoute.js"
-import { checkUpdatePassword, createAdmin, deleteUser, forgetPassword, getAdminPageDetails, getAllUsers, loginAdmin, loginUser, logOut, setCurrentGameLevel, setCurrentUserLessonsWatched, signUpUser, subscribe, updatePageProtected, updateUser } from "../controllers/user.controller.js"
+import { checkUpdatePassword, createAdmin, deleteUser, findUser, forgetPassword, getAdminPageDetails, getAllUsers, getCurrentUser, loginAdmin, loginUser, logOut, setCurrentGameLevel, setCurrentUserLessonsWatched, signUpUser, subscribe, updatePageProtected, updateUser } from "../controllers/user.controller.js"
 
 const router = express.Router()
 
@@ -14,7 +14,7 @@ router.get("/",protectRoute,getAllUsers)
 router.post("/forgetPassword",forgetPassword)
 router.post('/updatePassword',checkUpdatePassword)
 
-
+router.get("/:userId",findUser)
 
 
 router.post("/level/:userId",setCurrentGameLevel)
