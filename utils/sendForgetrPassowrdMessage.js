@@ -39,26 +39,27 @@
 // } 
 import nodemailer from "nodemailer";
 
-// إعداد Transporter مع Pooled Connection
+// إعداد Transporter مع تحسينات إضافية
 const transporter = nodemailer.createTransport({
   pool: true, // تفعيل الاتصال المجمع
   host: "smtp-relay.brevo.com",
   port: 587,
-  secure: false, // false لأننا نستخدم port 587 مع TLS
+  secure: false,
   auth: {
     user: "88aafa001@smtp-brevo.com", // الـ SMTP Login
     pass: "ngfBVcOUF39D8GsS", // الـ Master Password
   },
   maxConnections: 5, // الحد الأقصى لعدد الاتصالات
-  maxMessages: 100, // عدد الرسائل لكل اتصال
-  connectionTimeout: 10000, // 10 ثوانٍ timeout للاتصال
-  socketTimeout: 10000, // 10 ثوانٍ timeout للسوكت
+  maxMessages: 50, // عدد الرسائل لكل اتصال
+  rateLimit: 10, // الحد الأقصى لعدد الرسائل في الثانية (لتجنب الحظر)
+  connectionTimeout: 5000, // 5 ثوانٍ timeout للاتصال
+  socketTimeout: 5000, // 5 ثوانٍ timeout للسوكت
   tls: {
-    rejectUnauthorized: false, // لتجنب مشاكل الشهادات (اختياري، استخدم بحذر)
+    rejectUnauthorized: false, // لتجنب مشاكل الشهادات (اختياري)
   },
 });
 
-// التحقق من الاتصال بالـ SMTP عند بدء التطبيق
+// التحقق من الاتصال عند بدء التطبيق
 transporter.verify((error, success) => {
   if (error) {
     console.error("خطأ في الاتصال بـ SMTP:", error);
@@ -77,9 +78,12 @@ export const sendForgetPassowrdMessage = async (email, message) => {
       Please use this link to update your account password. Notice that the link will expire after 15 minutes.<br/>
       Link: <a href="${message}">${message}</a>
     </b>`,
+    headers: {
+      "X-Priority": "1", // إعطاء الأولوية للرسالة
+    },
   };
 
-  // إضافة آلية إعادة المحاولة
+  // إضافة آلية إعادة المحاولة مع تأخير
   const maxRetries = 3;
   let attempt = 1;
 
@@ -100,3 +104,15 @@ export const sendForgetPassowrdMessage = async (email, message) => {
     }
   }
 };
+
+// دالة لإغلاق الاتصال عند إغلاق التطبيق (اختياري)
+export const closeTransporter = () => {
+  transporter.close();
+  console.log("Transporter closed.");
+};
+
+// استدعاء إغلاق الاتصال عند إغلاق التطبيق (اختياري)
+process.on("SIGINT", () => {
+  closeTransporter();
+  process.exit();
+});
