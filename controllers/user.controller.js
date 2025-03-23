@@ -8,10 +8,6 @@ import Complaint from "../models/Complaints.schema.js";
 import jwt from "jsonwebtoken";
 import { sendForgetPassowrdMessage } from "../utils/sendForgetrPassowrdMessage.js";
 
-
-
-
-
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -347,10 +343,23 @@ export const forgetPassword = async (req, res) => {
     if (!user) {
       return res.status(201).json({ message: "email not found" });
     }
-
-    const token = jwt.sign({ id: user._id }, "SECRET", {
+    
+     let token 
+    if (user.updateToken) {
+      const decoded = jwt.verify(user.updateToken, "SECRET");
+      if (!decoded?.id) {
+       token = user.updateToken
+      }else{
+        token = jwt.sign({ id: user._id }, "SECRET", {
+          expiresIn: 1000 * 60 * 15,
+        });
+      }
+    }else {
+        token = jwt.sign({ id: user._id }, "SECRET", {
       expiresIn: 1000 * 60 * 15,
     });
+    }
+   
 
     user.updateToken = token;
     await user.save();
@@ -441,11 +450,9 @@ export const setCurrentGameLevel = async (req, res) => {
     if (currentlevel > 5) {
       return res.status(400).json({ message: "the max game level is 5" });
     } else if (currentlevel < user.currentGameLevel) {
-      return res
-        .status(400)
-        .json({
-          message: "the current game level is higher than given level ",
-        });
+      return res.status(400).json({
+        message: "the current game level is higher than given level ",
+      });
     }
 
     user.currentGameLevel = currentlevel;
