@@ -17,8 +17,8 @@ router.post('/',checkUpdatePassword)
 
 
 
-router.post("/level",setCurrentGameLevel)
-router.post('/lesson',setCurrentUserLessonsWatched)
+router.post("/level/:userId",setCurrentGameLevel)
+router.post('/lesson/:userId',setCurrentUserLessonsWatched)
 
  
 router.post('/updateprotect',updatePageProtected)
