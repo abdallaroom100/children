@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import User from "../models/User.schema.js";
 import generateToken from "../utils/generateToken.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
@@ -7,6 +6,17 @@ import { getSubscriptionPrice } from "../utils/getSubscriptoinPrice.js";
 import Complaint from "../models/Complaints.schema.js";
 import jwt from "jsonwebtoken";
 import { sendForgetPassowrdMessage } from "../utils/sendForgetrPassowrdMessage.js";
+import User from "../models/User.schema.js";
+import fs from "fs"
+import {dirname} from "path"
+import { fileURLToPath } from "url";
+import path from "path"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+ const imagePath = path.join(__dirname,"../images")
+
+
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -18,28 +28,28 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
- export const findUser = async  ( req,res)=>{
-    const {userId} = req.params
+export const findUser = async (req, res) => {
+  const { userId } = req.params;
   try {
-     const user = await User.findById(userId) 
-     if(!user) {
-      return res.status(200).json({message:"user not found"})
-     }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(200).json({ message: "user not found" });
+    } 
 
-     res.status(201).json(user)
-
+    res.status(201).json(user);
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
- }
+};
+
 export const getCurrentUser = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req?.userId)) {
       return res.status(400).json({ error: "invalid id" });
     }
     const user = await User.findById(req.userId);
-    if (!user) return res.status(401).json({ error: "user not found" });
-    res.status(200).json(user);
+    if (!user) return res.status(401).json({ error: "user not found",success:false });
+    res.status(200).json({...user._doc,password:undefined,rule:undefined, success:true});
   } catch (error) {
     console.log(`error in get current user function`);
     console.log(error.message);
@@ -47,135 +57,276 @@ export const getCurrentUser = async (req, res) => {
 };
 
 export const signUpUser = async (req, res) => {
-  const { name, password, email } = req.body;
+  let { fullName, password, email, phone, identityNumber } = req.body;
   try {
-    if (!name || !password) {
-      return res.status(400).json({ error: "plase fill all fields" });
+    if (!fullName || !password || !email || !phone || !identityNumber) {
+      return res.status(400).json({ error: "من فضلك قم بملئ جميع الحقول" });
     }
-    if (name.length < 3) {
-      return res
-        .status(400)
-        .json({ error: "username must be atleast 3 chars" });
-    }
-
     if (!validator.isEmail(email)) {
-      return res.status(400).json({ error: "invalid email" });
+      return res.status(400).json({ error: "البريد الإلكتروني غير صالح" });
+    }
+ 
+    const user = await User.findOne().where("email").equals(email);
+    console.log(user);
+    if (user)
+      return res.status(400).json({ error: "البريد الإلكتروني مستخدم من قبل" });
+
+
+    fullName = fullName.split(" ").filter((name) => name !== "");
+    if (fullName.length != 4) {
+      return res.status(400).json({ error: "اسم المستخدم يجب أن يكون رباعيا" });
     }
 
-    if (password.length < 6) {
+    
+ 
+     if(String(phone).length != 9) {
+      return res.status(400).json({error:"ادخل رقم هاتف صحيح"})
+     }
+
+    if (String(identityNumber).length !== 10) {
+
+      return res.status(400).json({ error: "رقم الهوية يجب أن يكون 10 أرقام" });
+    }
+
+    if (isNaN(Number(identityNumber))) {
+      return res.status(400).json({ error: "رقم الهوية يجب أن يكون أرقام فقط" });
+    }
+   
+     const checkUserIdentityNumber = await User.findOne({identityNumber})
+     if(checkUserIdentityNumber){
+      return res.status(400).json({error:"رقم الهوية هذا مستخدم من قبل"})
+     }
+    
+
+    if (password.length <= 8) {
       return res
         .status(400)
-        .json({ error: "password must be atleast 6 chars" });
+        .json({ error: "كلمة المرور يجب أن يكون على الأقل 8 أحرف" });
     }
 
-    const user = await User.findOne({ email });
-
-    if (user)
-      return res.status(400).json({ error: "this email is already exist" });
+   
 
     const hash = bcrypt.hashSync(password, 10);
     const newUser = await User.create({
-      name,
-      email,
+      firstName: fullName[0],
+      secondName: fullName[1],
+      thirdName: fullName[2],
+      lastName: fullName[3],
+      email:String(email).toLowerCase(),
       password: hash,
+      phone,
+      identityNumber,
+      rule: "user",
     });
 
     generateToken(newUser._id, res, req);
 
-    res.status(200).json({ ...newUser._doc, token: req.token });
+    res.status(200).json({
+      ...newUser._doc,
+      password: undefined,
+      rule: undefined,
+      token: req.token,
+    });
   } catch (error) {
     console.log(`error in signup user function`);
     console.log(error.message);
   }
 };
+
 export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { loginDetails, password } = req.body;
   try {
-    if (!email || !password) {
-      return res.status(400).json({ error: "plase fill all required fields" });
+    let user;
+    if (!loginDetails || !password) {
+      return res.status(400).json({ error: "من فضلك قم بملئ جميع الحقول" });
+    }
+    if (validator.isEmail(loginDetails)) {
+      
+      user = await User.findOne({email:String(loginDetails).toLowerCase()})
+      console.log(user)
+    } else {
+      if(!Number(loginDetails)){
+        return res.status(401).json({ error: "بيانات التسجيل هذه غير موجوده" });
+      }
+      user = await User.findOne({phone:loginDetails})
     }
 
-    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: "email not found" });
+      return res.status(401).json({ error: "بيانات التسجيل هذه غير موجوده" });
     }
-    const Vpassword = bcrypt.compareSync(password, user.password);
+    console.log(user.password)
+    const Vpassword = bcrypt.compareSync(password,user.password)
     if (!Vpassword) {
-      return res.status(401).json({ error: "password is incorrect" });
+      return res.status(401).json({ error: "بيانات التسجيل هذه غير موجوده" });
     }
     generateToken(user._id, res, req);
-    console.log(req.token);
-    res.status(200).json({ ...user._doc, token: req.token });
+   return res.status(200).json({
+      ...user._doc,
+      password: undefined,
+      rule: undefined,
+      token: req.token,
+    });
   } catch (error) {
     console.log(`error in login user function`);
     console.log(error.message);
   }
 };
 
+
+
 export const deleteUser = async (req, res) => {
   const { userId } = req.params;
   try {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: "invalid id" });
+      return res.status(400).json({ error: "المعرف غير صالح" });
     }
     const user = await User.findByIdAndDelete(userId, {
       new: true,
     });
     if (!user) {
-      return res.status(401).json({ error: "user not found" });
+      return res.status(401).json({ error: "المستخدم غير موجود" });
     }
-    return res.status(200).json({message:"user has deleted successfully",success:true});
+    return res
+      .status(200)
+      .json({ message: "تم حذف المستخدم بنجاح", success: true });
   } catch (error) {
     console.log(`error in delete user function`);
     console.log(error.message);
   }
 };
-export const updateUser = async (req, res) => {
-  const { userId } = req.params;
-  try {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: "invalid id" });
-    }
-    const { username, password } = req.body;
-    if (!username && !password) {
-      return res.status(400).json({ error: "plase fill at least one field" });
-    }
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ error: "password must be atleast 6 chars" });
-    }
-    if (username.length < 3) {
-      return res
-        .status(400)
-        .json({ error: "username must be atleast 3 chars" });
-    }
-    const existUser = await User.findOne({ username });
-    if (existUser)
-      if (username) {
-        return res
-          .status(400)
-          .json({ error: "this username is already exist" });
-      }
-    const hash = bcrypt.hashSync(password, 10);
-    const user = await User.findByIdAndUpdate(
-      userId,
-      {
-        username,
-        password: hash,
-      },
-      { new: true }
-    );
 
-    if (!user) {
-      return res.status(401).json({ error: "user not found" });
+const deleteImageAfterError = (req) => {
+  if (req.file && fs.existsSync(path.join(imagePath, req.file?.filename))) {
+    fs.unlinkSync(path.join(imagePath, req.file?.filename));
+  }
+}
+
+const validateHomeData = (homeData) => {
+  // التحقق من البيانات الأساسية للمنزل
+  if (!homeData.homeNickname || !homeData.city || !homeData.district) {
+    return { isValid: false, error: "من فضلك قم بملئ جميع بيانات المنزل الأساسية" };
+  }
+
+  // التحقق من وجود مرافق واحد على الأقل
+  if (!homeData.housemates || homeData.housemates.length < 1) {
+    return { isValid: false, error: "يجب أن يكون لديك على الأقل مرافق واحد" };
+  }
+
+  // التحقق من بيانات المرافقين
+  for (const housemate of homeData.housemates) {
+    if (!housemate.name || !housemate.kinship || !housemate.gender || !housemate.birthDate || !housemate.identityNumber) {
+      return { isValid: false, error: "من فضلك قم بملئ جميع بيانات المرافقين" };
     }
-    return res.status(200).json(user);
+  }
+
+  // التحقق من المنازل الإضافية إذا وجدت
+  if (homeData.additionalHomes && homeData.additionalHomes.length > 0) {
+    for (const home of homeData.additionalHomes) {
+      if (!home.homeNickname || !home.city || !home.district) {
+        return { isValid: false, error: "من فضلك قم بملئ جميع بيانات المنازل الإضافية" };
+      }
+    }
+  }
+
+  return { isValid: true };
+}
+
+
+export const updateUser = async (req, res, next) => {
+  try {
+    const {
+      firstName,
+      secondName,
+      thirdName,
+      lastName,
+      phone,
+      gender,
+      birthDate,
+      maritalStatus,
+      nationality,
+      cityOfResidence,
+      identityNumber,
+      home,
+    } = req.body;
+
+    // التحقق من البيانات الأساسية
+    if (!firstName || !secondName || !thirdName || !lastName || !phone || 
+        !gender || !birthDate || !maritalStatus || !nationality || 
+        !identityNumber || !cityOfResidence) {
+      deleteImageAfterError(req);
+      return res.status(400).json({ error: "من فضلك قم بملئ جميع البيانات الأساسية" });
+    }
+
+    // البحث عن المستخدم
+   
+    const existUser = await User.findById(req.userId);
+    if (!existUser) {
+      deleteImageAfterError(req);
+      return res.status(400).json({ error: "المستخدم غير موجود" });
+    }
+    const checkUser = await User.findOne({identityNumber,_id:{$ne:req.userId}})
+ if(checkUser){
+      return res.status(400).json({ error: "رقم الهوية هذا مستخدم من قبل" });
+    }
+    // تحليل بيانات المنزل
+    let homeData;
+    try {
+      homeData = typeof home === 'string' ? JSON.parse(home) : home;
+    } catch (error) {
+      deleteImageAfterError(req);
+      return res.status(400).json({ error: "بيانات المنزل غير صحيحة" });
+    }
+
+    // التحقق من صحة بيانات المنزل
+    const homeValidation = validateHomeData(homeData);
+    if (!homeValidation.isValid) {
+      deleteImageAfterError(req);
+      return res.status(400).json({ error: homeValidation.error });
+    }
+
+    // تحديث الصورة إذا وجدت
+    
+    let finalIdImagePath = existUser.idImagePath
+     if(req.file && existUser?.idImagePath){
+       const oldImagePath  = imagePath + "/" + existUser.idImagePath?.split("/")?.slice(-1)[0]
+      if(fs.existsSync(oldImagePath)){
+        fs.unlinkSync(oldImagePath)
+      }
+      finalIdImagePath = `${req.protocol}://${req.get("host")}/${req.file?.filename}`
+     } else  if(req.file && !existUser?.idImagePath){
+      finalIdImagePath = `${req.protocol}://${req.get("host")}/${req.file?.filename}`
+     }
+     console.log(req.file?.filename)
+     console.log(imagePath)
+     console.log(existUser.idImagePath)
+    // تحديث بيانات المستخدم
+    await existUser.updateOne({
+      idImagePath: finalIdImagePath,
+      home: homeData,
+      phone,
+      gender,
+      birthDate,
+      maritalStatus,
+      nationality,
+      cityOfResidence,
+      identityNumber
+    });
+
+    existUser.hasAFamily = true;
+    await existUser.save();
+    
+    res.status(200).json({ message: "تم تحديث البيانات بنجاح", success: true });
+    next();
   } catch (error) {
-    console.log(`error in delete user function`);
+    console.log(`error in update user function`);
     console.log(error.message);
+
+    res.status(500).json({ error: "حدث خطأ أثناء تحديث البيانات" });
   }
 };
+
+
+
 
 export const logOut = async (req, res) => {
   try {
@@ -341,59 +492,6 @@ export const getAdminPageDetails = async (req, res) => {
   }
 };
 
-// export const forgetPassword = async (req, res) => {
-//   try {
-//     const { email, port } = req.body;
-
-//     if (!email) {
-//       return res.status(400).json({ message: "email is required" });
-//     }
-//     if (!port) {
-//       return res.status(400).json({
-//         message: "missing port!, please open the project with live server",
-//       });
-//     }
-
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(201).json({ message: "email not found" });
-//     }
-    
-//      let token 
-//     if (user.updateToken) {
-//       const decoded = jwt.verify(user.updateToken, "SECRET");
-//       if (!decoded?.id) {
-//        token = user.updateToken
-//       }else{
-//         token = jwt.sign({ id: user._id }, "SECRET", {
-//           expiresIn: 1000 * 60 * 15,
-//         });
-//       }
-//     }else {
-//         token = jwt.sign({ id: user._id }, "SECRET", {
-//       expiresIn: 1000 * 60 * 15,
-//     });
-//     }
-//     console.log(token)
-
-//     user.updateToken = token;
-//     await user.save();
-//     sendForgetPassowrdMessage(
-//       user.email,
-//       `http://localhost:${port}/pages/updatePassword.html?token=${user.updateToken}?email=${user.email}`
-//     );
-
-//     return res.status(200).json({
-//       message: "email has been sent , check your email",
-//       success: true,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
-
-
-
 export const forgetPassword = async (req, res) => {
   try {
     const { email, port } = req.body;
@@ -538,63 +636,6 @@ export const checkUpdatePassword = async (req, res) => {
     res
       .status(200)
       .json({ message: "password is updated successfully", success: true });
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const setCurrentGameLevel = async (req, res) => {
-  const { currentlevel } = req.body;
-  const { userId } = req.params;
-  try {
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(401).json({ message: "user not found" });
-    }
-
-    if (currentlevel > 5) {
-      return res.status(400).json({ message: "the max game level is 5" });
-    } else if (currentlevel < user.currentGameLevel) {
-      return res.status(400).json({
-        message: "the current game level is higher than given level ",
-      });
-    }
-
-    user.currentGameLevel = currentlevel;
-    await user.save();
-
-    res
-      .status(200)
-      .json({ message: `current user have reached level ${currentlevel}` });
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-export const setCurrentUserLessonsWatched = async (req, res) => {
-  const { userId } = req.params;
-  const { lesson } = req.body;
-  try {
-    const user = await User.findById(userId);
-
-    if (!lesson) {
-      return res.status(400).json({ message: "lesson cannot be empty" });
-    }
-    if (!user) {
-      return res.status(401).json({ message: "user not found" });
-    }
-
-    if (user.lessons.includes(lesson)) {
-      return res.status(400).json({ message: "this lesson is already added" });
-    }
-
-    user.lessons.push(lesson);
-    await user.save();
-
-    res
-      .status(200)
-      .json({ message: "the lesson added successfully", success: true });
   } catch (error) {
     console.log(error);
   }

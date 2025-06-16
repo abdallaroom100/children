@@ -30,9 +30,7 @@ import jwt from "jsonwebtoken";
 //   });
 // };
 const generateToken = (userId, res,req) => {
-  const token = jwt.sign({ userId },"secret", {
-    expiresIn: "11d",
-  });
+  const token = jwt.sign({ userId },"secret");
   req.token = token
   res.setHeader('Authorization',`Bearer ${token}`)
   res.status(200)
