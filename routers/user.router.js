@@ -34,13 +34,14 @@ const upload = multer({
 
 router.post("/signup",signUpUser)
 router.post("/login",loginUser)
+
 router.post("/createAdmin",createAdmin)
 router.post("/loginAdmin",loginAdmin)
 router.post("/subscribe/:id",protectRoute,subscribe)
 router.get("/",protectRoute,getAllUsers)
 router.get("/me",protectRoute,getCurrentUser)
 router.get("/find/:userId",findUser)
-
+router.get("/",getAllUsers)
 
 
 
