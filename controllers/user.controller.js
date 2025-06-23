@@ -326,8 +326,8 @@ export const updateUser = async (req, res, next) => {
 };
 
 
-
-
+ 
+  
 export const logOut = async (req, res) => {
   try {
     res.cookie("jwt", "", {
